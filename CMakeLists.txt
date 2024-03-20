@@ -1,28 +1,58 @@
-# Request the minimum version of CMake, in case of lower version throws error.
-# See: https://cmake.org/cmake/help/latest/command/cmake_minimum_required.html
+# version minima requerida por este proyecto de cmake
 cmake_minimum_required(VERSION 3.25 FATAL_ERROR)
 
-# Define your project:
-# See: https://cmake.org/cmake/help/latest/command/project.html
+# detalles del proyecto
 project(
-  "FirstProjectInCMake"
-  VERSION 1.0.0
-  DESCRIPTION "CMake C Project Template for Operating Systems II"
-  LANGUAGES C
+	"FirstProjectInCmake"
+	VERSION 1.1.0
+	DESCRIPTION "CMake C Project Template for Operating Systems II"
+	LANGUAGES C
 )
 
-# Define the C standard, we are going to use std17
-# See: https://cmake.org/cmake/help/latest/variable/CMAKE_CXX_STANDARD.html
+# enable testing
+include(CTest)
+
 set(CMAKE_C_STANDARD 17)
 
-# Include the `include` directory, where the headers are located
-# See: https://cmake.org/cmake/help/latest/command/include_directories.html
+# include directory where to find headers
 include_directories(include)
 
-# Add the `src` directory, where the source files are located
-# See: https://cmake.org/cmake/help/latest/command/file.html#glob
-file(GLOB_RECURSE SOURCES "src/*.c")
+# module to fetch a repository
+include(FetchContent)
 
-# Create the executable
-# See: https://cmake.org/cmake/help/latest/command/add_executable.html
+set(UNITY_GIT_URL "https://github.com/ThrowTheSwitch/Unity.git")
+
+# enable debug
+set(FETCHCONTENT_QUIET OFF)
+
+FetchContent_Declare(
+	Unity
+	GIT_REPOSITORY ${UNITY_GIT_URL}
+	SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/Unity
+	UPDATE_COMMAND "" # disable update command
+)
+
+# wait for repo ready
+FetchContent_MakeAvailable(Unity)
+
+# add sources
+file(GLOB_RECURSE SOURCES "src/*.c") # agrega en la variable global SOURCES todos los archivos .c
+
+# crear el ejecutable
 add_executable(${PROJECT_NAME} ${SOURCES})
+
+# agregar librerias, busca otro CMakeLists.txt
+add_subdirectory(lib/libdyn)
+add_subdirectory(lib/libsta)
+
+target_include_directories(${PROJECT_NAME} PUBLIC lib/libdyn/include)
+target_include_directories(${PROJECT_NAME} PUBLIC lib/libsta/include)
+
+# link libraries, specify Project Name defined in CMakeLists.txt of each library
+target_link_libraries(${PROJECT_NAME} StatiCLib DynamiCLib)
+
+# add tests
+if (RUN_TESTS EQUAL 1 OR RUN_COVERAGE EQUAL 1)
+	add_subdirectory(tests)
+endif()
+
